@@ -1,3 +1,5 @@
+# Instructions are currently not reflective of the mounting script that's on the repo. Please consult the instructions inside the file for the meantime while I get around to fixing it here. Only revelant part is Unraid User Requirements section.
+
 # Rclone Mount & Upload Scripts for Plex Users
 
 Collection of scripts to create rclone google mounts to allow fast launch times with Plex (or Emby).  
