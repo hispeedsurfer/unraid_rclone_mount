@@ -1,4 +1,5 @@
 # Instructions are currently not reflective of the mounting script that's on the repo. Please consult the instructions inside the file for the meantime while I get around to fixing it here. Only revelant part is Unraid User Requirements section.
+# Currently Applies to unraid_mount script.
 
 # Rclone Mount & Upload Scripts for Plex Users
 
@@ -10,7 +11,7 @@ The main thread for more support: https://forums.unraid.net/topic/75436-guide-ho
 
 Thanks to <a href="https://github.com/SenpaiBox">SenPaiBox</a> and the Unraid community for help in refining the scripts.
 
-<b>Unraid Users Requirements:</b>
+## Unraid Users Requirements:
 <ul>
 	<li><b>Unraid Rclone Plugin</b>
 		<ul>
@@ -41,7 +42,7 @@ Thanks to <a href="https://github.com/SenpaiBox">SenPaiBox</a> and the Unraid co
 			</ul>
 		</ul>
 </ul>
-<b>Non-unRaid Users</b>
+## Non-unRaid Users
 <p/><p/>
 Other users need to install rclone and use their preferred way to schedule cron jobs.  The scripts install mergerfs, which I think should work for other systems.
 <p/><p/><li><b>Optional: Create <a href="https://github.com/xyou365/AutoRclone">Service Accounts (follow steps 1-4)</a>.</b></li>

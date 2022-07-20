@@ -1,0 +1,29 @@
+[Unit]
+Description=rclonemount
+After=network.target
+
+[Service]
+Type=simple
+User=%i
+Group=%i
+ExecStartPre=-/bin/mkdir -p /home/%i/cloud/gdrive/
+ExecStart=/usr/bin/rclone mount %RcloneRemoteMount /home/%i/cloud/gdrive/ \
+   --config /home/%i/.config/rclone/rclone.conf \
+   --use-mmap \
+   --dir-cache-time 72h \
+   --timeout 60s \
+   --umask 002 \
+   --allow-other \
+   --vfs-cache-mode writes \
+   --vfs-read-chunk-size 16M \
+   --vfs-read-chunk-size-limit 512M \
+   --tpslimit 10
+ExecStop=/bin/fusermount -uz /home/%i/cloud/gdrive/
+Restart=on-failure
+RestartSec=30
+StartLimitInterval=60s
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target
+

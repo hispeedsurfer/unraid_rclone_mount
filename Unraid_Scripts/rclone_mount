@@ -10,10 +10,16 @@
 ####### EDIT ONLY THESE SETTINGS #######
 
 # INSTRUCTIONS
-# 1. RcloneRemoteMount is the location. RcloneRemoteName is what you to name the service.
-# 2.  
-# 3. Optional: include custom command and bind mount settings
-# 4. Optional: include extra folders in mergerfs mount
+# 1. RcloneRemoteName is what you to name the service for log purposes only.
+# 2. RcloneRemoteMount is the location.
+# 3. rcloneVFSMount is the location where you want rclone to mount your remote files. 
+# 4. LocalFiles is your local folders you want to be included in the MergerFS location. (pretty self explanatory)
+# 5. MergedLocation is your MergerFS location. 
+
+
+# Optional: Include custom command to pass to rclone in the commands section. if you add more than 8, please add the variables on line 149.
+# Optional: Include extra folders in mergerfs mount. You'll need to add the variables for more folders and include the snippet after line 215. 
+#           Ensure you have the format correct and verify indents. We like clean scripts!
 
 # REQUIRED SETTINGS
 RcloneRemoteName="Archive" # name of your mount. do not include symbols.
