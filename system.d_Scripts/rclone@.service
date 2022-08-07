@@ -6,17 +6,23 @@ After=network.target
 Type=simple
 User=%i
 Group=%i
-ExecStartPre=-/bin/mkdir -p /home/%i/cloud/gdrive/
-ExecStart=/usr/bin/rclone mount %RcloneRemoteMount /home/%i/cloud/gdrive/ \
+ExecStartPre=-/bin/mkdir -p /home/%i/cloud/%RcloneRemoteMount/
+ExecStart=/usr/bin/rclone mount %RcloneRemoteMount /home/%i/cloud/rcloneMount/ \
    --config /home/%i/.config/rclone/rclone.conf \
+   --user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36" \
    --use-mmap \
    --dir-cache-time 72h \
    --timeout 60s \
    --umask 002 \
    --allow-other \
    --vfs-cache-mode writes \
-   --vfs-read-chunk-size 16M \
-   --vfs-read-chunk-size-limit 512M \
+   --buffer-size 16M \
+   --vfs-read-ahead 128M \
+   --vfs-read-chunk-size 128M \
+   --vfs-read-chunk-size-limit 500M \
+   --vfs-cache-max-age 30m \
+   --log-level INFO \
+   --log-file /home/%i/.logs/mount.log \
    --tpslimit 10
 ExecStop=/bin/fusermount -uz /home/%i/cloud/gdrive/
 Restart=on-failure
@@ -26,4 +32,6 @@ StartLimitBurst=3
 
 [Install]
 WantedBy=multi-user.target
+
+%RcloneRemoteMount
 

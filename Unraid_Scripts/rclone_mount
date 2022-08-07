@@ -6,6 +6,9 @@
 #   Credits to BinsonBuzz for the original script!  #
 # https://github.com/BinsonBuzz/unraid_rclone_mount/#
 #####################################################
+#				Version 2022-rev 1.1 				#
+#    https://github.com/drpoutine/unraid_rclone/    #
+#####################################################
 
 ####### EDIT ONLY THESE SETTINGS #######
 
@@ -22,13 +25,14 @@
 #           Ensure you have the format correct and verify indents. We like clean scripts!
 
 # REQUIRED SETTINGS
-RcloneRemoteName="Archive" # name of your mount. do not include symbols.
-RcloneRemoteMount="gdrive:/Archive" # You can include a specific Directory as well. (e.g, gdrive:/YourFolder/)
-rcloneVFSMount="/mnt/user/mediacenter/cloud/gdrive/" # where your rclone remote will be located.(e.g. /mnt/user/mount_rclone)
+RcloneRemoteName="NameMePlease" # name of your mount. do not include symbols.
+RcloneRemoteMount="myremotename:/optionalfolder" # You can include a specific Directory as well. (e.g, gdrive:/YourFolder/)
+rcloneVFSMount="/mnt/user/mediacenter/cloud/rcloneVFS/" # where your rclone remote will be located.(e.g. /mnt/user/mount_rclone)
 LocalFiles="/mnt/user/mediacenter/cloud/cache/" # location of the local files and MountFolders you want to upload to rclone (e.g. /mnt/user/local) Enter 'ignore' to disable
-MergedLocation="/mnt/user/mediacenter/cloud/gmedia/" # MergerFS Location(e.g. /mnt/user/mount_mergerfs). Enter 'ignore' to disable
+RcloneCacheShare="/mnt/user0/mediacenter/cloud/rcloneVFS/" # user disk0 for cache on unraid
+MergedLocation="/mnt/user/mediacenter/cloud/MergerFS/" # MergerFS Location(e.g. /mnt/user/mount_mergerfs). Enter 'ignore' to disable
 DirCacheTime="72h" # rclone dir cache time
-DockerStart="plex" # list of dockers, separated by space, to start once mergerfs mount verified. Remember to disable AUTOSTART for dockers added in docker settings page. Consult 'docker ps' view the container names.
+DockerStart="plex tautulli" # list of dockers, separated by space, to start once mergerfs mount verified. Remember to disable AUTOSTART for dockers added in docker settings page. Consult 'docker ps' view the container names.
 
 
 # OPTIONAL SETTINGS
@@ -65,7 +69,7 @@ LocalFilesLocation="$LocalFiles" # Location for local files to be merged with rc
 MergerFSMountLocation="$MergedLocation" # Rclone data folder location
 
 ####### create directories for rclone mount and mergerfs mounts #######
-mkdir -p /mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName # for script files
+mkdir -p /mnt/user/appdata/rclone/remotes/$RcloneRemoteName # for script files
 if [[  $LocalFiles == 'ignore' ]]; then
 	echo "$(date "+%d.%m.%Y %T") INFO: Not creating local folders as requested."
 	LocalFilesLocation="/tmp/$RcloneRemoteName"
@@ -87,12 +91,12 @@ fi
 #######  Check if script is already running  #######
 echo "$(date "+%d.%m.%Y %T") INFO: *** Starting mount of remote ${RcloneRemoteName}"
 echo "$(date "+%d.%m.%Y %T") INFO: Checking if this script is already running."
-if [[ -f "/mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName/mount_running" ]]; then
+if [[ -f "/mnt/user/appdata/rclone/remotes/$RcloneRemoteName/mount_running" ]]; then
 	echo "$(date "+%d.%m.%Y %T") INFO: Exiting script as already running."
 	exit
 else
 	echo "$(date "+%d.%m.%Y %T") INFO: Script not running - proceeding."
-	touch /mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName/mount_running
+	touch /mnt/user/appdata/rclone/remotes/$RcloneRemoteName/mount_running
 fi
 
 ####### Checking have connectivity #######
@@ -103,7 +107,7 @@ if [ $? -eq 0 ]; then # ping returns exit status 0 if successful
 	echo "$(date "+%d.%m.%Y %T") PASSED: *** Internet online"
 else
 	echo "$(date "+%d.%m.%Y %T") FAIL: *** No connectivity.  Will try again on next run"
-	rm /mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName/mount_running
+	rm /mnt/user/appdata/rclone/remotes/$RcloneRemoteName/mount_running
 	exit
 fi
 
@@ -135,16 +139,20 @@ else
 	fi
 # create rclone mount
 	rclone mount \
-	--attr-timeout $DirCacheTime \
-	--log-level INFO \
+	--config /boot/config/plugins/rclone/.rclone.conf \
+	--user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36" \
 	--use-mmap \
 	--dir-cache-time $DirCacheTime \
+	--cache-dir "$RcloneCacheShare/cache/$RcloneRemoteName" \
 	--timeout 60s \
-	--umask 002 \
+	--umask 000 \
 	--allow-other \
 	--vfs-cache-mode writes \
-	--vfs-read-chunk-size 16M \
-	--vfs-read-chunk-size-limit 512M \
+	--buffer-size 16M \
+	--vfs-read-ahead 4096M \
+	--vfs-read-chunk-size 128M \
+	--vfs-read-chunk-size-limit 256M \
+	--log-level INFO \
 	--tpslimit 10 \
 	--bind=$RCloneMountIP \
 	$Command1 $Command2 $Command3 $Command4 $Command5 $Command6 $Command7 $Command8 \
@@ -160,7 +168,7 @@ else
 	else
 		echo "$(date "+%d.%m.%Y %T") CRITICAL: ${RcloneRemoteName} mount failed - please check for problems.  Stopping dockers"
 		docker stop $DockerStart
-		rm /mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName/mount_running
+		rm /mnt/user/appdata/rclone/remotes/$RcloneRemoteName/mount_running
 		exit
 	fi
 fi
@@ -179,9 +187,9 @@ else
 		else
 # Build mergerfs binary
 			echo "$(date "+%d.%m.%Y %T") INFO: Mergerfs not installed - installing now."
-			mkdir -p /mnt/user/appdata/other/rclone/mergerfs
-			docker run -v /mnt/user/appdata/other/rclone/mergerfs:/build --rm trapexit/mergerfs-static-build
-			mv /mnt/user/appdata/other/rclone/mergerfs/mergerfs /bin
+			mkdir -p /mnt/user/appdata/rclone/mergerfs
+			docker run -v /mnt/user/appdata/rclone/mergerfs:/build --rm trapexit/mergerfs-static-build
+			mv /mnt/user/appdata/rclone/mergerfs/mergerfs /bin
 # check if mergerfs install successful
 			echo "$(date "+%d.%m.%Y %T") INFO: *sleeping for 5 seconds"
 			sleep 5
@@ -189,7 +197,7 @@ else
 				echo "$(date "+%d.%m.%Y %T") INFO: Mergerfs installed successfully, proceeding to create mergerfs mount."
 			else
 				echo "$(date "+%d.%m.%Y %T") ERROR: Mergerfs not installed successfully.  Please check for errors.  Exiting."
-				rm /mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName/mount_running
+				rm /mnt/user/appdata/rclone/remotes/$RcloneRemoteName/mount_running
 				exit
 			fi
 		fi
@@ -226,7 +234,7 @@ else
 		else
 			echo "$(date "+%d.%m.%Y %T") CRITICAL: ${RcloneRemoteName} mergerfs mount failed.  Stopping dockers."
 			docker stop $DockerStart
-			rm /mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName/mount_running
+			rm /mnt/user/appdata/rclone/remotes/$RcloneRemoteName/mount_running
 			exit
 		fi
 	fi
@@ -235,20 +243,20 @@ fi
 ####### Starting Dockers That Need Mergerfs Mount To Work Properly #######
 
 # only start dockers once
-if [[ -f "/mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName/dockers_started" ]]; then
+if [[ -f "/mnt/user/appdata/rclone/remotes/$RcloneRemoteName/dockers_started" ]]; then
 	echo "$(date "+%d.%m.%Y %T") INFO: dockers already started."
 else
 # Check CA Appdata plugin not backing up or restoring
 	if [ -f "/tmp/ca.backup2/tempFiles/backupInProgress" ] || [ -f "/tmp/ca.backup2/tempFiles/restoreInProgress" ] ; then
 		echo "$(date "+%d.%m.%Y %T") INFO: Appdata Backup plugin running - not starting dockers."
 	else
-		touch /mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName/dockers_started
+		touch /mnt/user/appdata/rclone/remotes/$RcloneRemoteName/dockers_started
 		echo "$(date "+%d.%m.%Y %T") INFO: Starting dockers."
 		docker start $DockerStart
 	fi
 fi
 
-rm /mnt/user/appdata/other/rclone/remotes/$RcloneRemoteName/mount_running
+rm /mnt/user/appdata/rclone/remotes/$RcloneRemoteName/mount_running
 echo "$(date "+%d.%m.%Y %T") INFO: Script complete"
 
 exit

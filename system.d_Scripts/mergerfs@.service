@@ -8,8 +8,8 @@ Type=forking
 User=%i
 Group=%i
 TimeoutStopSec=60
-ExecStartPre=-/bin/mkdir -p /home/%i/cloud/gmedia
-ExecStart=/usr/bin/mergerfs /home/%i/cloud/cache:/home/%i/cloud/gdrive /home/%i/cloud/gmedia \
+ExecStartPre=-/bin/mkdir -p /home/%i/cloud/MergerFS
+ExecStart=/usr/bin/mergerfs /home/%i/cloud/cache:/home/%i/cloud/rcloneMount /home/%i/cloud/MergerFS \
     -o rw,use_ino,allow_other,func.getattr=newest,category.action=all,category.create=ff,cache.files=auto-full,dropcacheonclose=true \
 
 StandardOutput=/home/%i/cloud/logs/mergerfs_mount.log
